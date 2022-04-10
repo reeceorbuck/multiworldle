@@ -94,6 +94,7 @@ export function Game({ settingsData, updateSettings }: GameProps) {
   );
 
   useEffect(() => {
+    console.log("Adding message event listener to socket");
     socket.addEventListener("message", onMessage);
 
     return () => {

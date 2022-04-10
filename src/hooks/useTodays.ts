@@ -34,6 +34,9 @@ export function useTodays(dayString: string): [
   number,
   number
 ] {
+  const queryParams = new URLSearchParams(window.location.search);
+  const gameid = "_gameid:" + queryParams.get("gameid") || "";
+
   const [todays, setTodays] = useState<{
     country?: Country;
     guesses: Guess[];
@@ -48,21 +51,21 @@ export function useTodays(dayString: string): [
       const newGuesses = [...todays.guesses, newGuess];
 
       setTodays((prev) => ({ country: prev.country, guesses: newGuesses }));
-      saveGuesses(dayString, newGuesses);
+      saveGuesses(dayString + gameid, newGuesses);
     },
-    [dayString, todays]
+    [dayString, todays, gameid]
   );
 
   useEffect(() => {
-    const guesses = loadAllGuesses()[dayString] ?? [];
+    const guesses = loadAllGuesses()[dayString + gameid] ?? [];
     const country = getCountry(dayString);
 
     setTodays({ country, guesses });
-  }, [dayString]);
+  }, [dayString, gameid]);
 
   const randomAngle = useMemo(
-    () => seedrandom.alea(dayString)() * 360,
-    [dayString]
+    () => seedrandom.alea(dayString + gameid)() * 360,
+    [dayString, gameid]
   );
 
   const imageScale = useMemo(() => {
@@ -79,6 +82,11 @@ function getCountry(dayString: string) {
   let pickingDate = DateTime.fromFormat("2022-03-21", "yyyy-MM-dd");
   let smallCountryCooldown = 0;
   let pickedCountry: Country | null = null;
+
+  const queryParams = new URLSearchParams(window.location.search);
+
+  const gameid = "_gameid:" + queryParams.get("gameid") || "";
+  // console.log("gameId: ", gameid);
 
   do {
     smallCountryCooldown--;
@@ -102,7 +110,8 @@ function getCountry(dayString: string) {
       forcedCountry ??
       countrySelection[
         Math.floor(
-          seedrandom.alea(pickingDateString)() * countrySelection.length
+          seedrandom.alea(pickingDateString + gameid)() *
+            countrySelection.length
         )
       ];
 
