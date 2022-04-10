@@ -13,6 +13,7 @@ import { useReactPWAInstall } from "@teuteuf/react-pwa-install";
 import { InstallButton } from "./components/InstallButton";
 import { Twemoji } from "@teuteuf/react-emoji-render";
 import { getDayString, useTodays } from "./hooks/useTodays";
+
 import {
   LocalStoragePersistenceService,
   ServiceWorkerUpdaterProps,
@@ -98,6 +99,7 @@ function App({
         <div className="w-full max-w-lg flex flex-col">
           <header className="border-b-2 px-3 border-gray-200 flex">
             <button
+              title="infoButton"
               className="mr-3 text-xl"
               type="button"
               onClick={() => setInfoOpen(true)}
@@ -111,6 +113,7 @@ function App({
               Wor<span className="text-green-600">l</span>dle
             </h1>
             <button
+              title="statsButton"
               className="ml-3 text-xl"
               type="button"
               onClick={() => setStatsOpen(true)}
@@ -118,6 +121,7 @@ function App({
               <Twemoji text="📈" />
             </button>
             <button
+              title="settingsButton"
               className="ml-3 text-xl"
               type="button"
               onClick={() => setSettingsOpen(true)}
@@ -125,7 +129,9 @@ function App({
               <Twemoji text="⚙️" />
             </button>
           </header>
+
           <Game settingsData={settingsData} updateSettings={updateSettings} />
+
           <footer className="flex justify-center items-center text-sm mt-8 mb-1">
             <Twemoji
               text="❤️"
@@ -143,6 +149,7 @@ function App({
               </a>
             ) : (
               <a
+                title="referLink"
                 className="underline pl-1"
                 href="https://www.ko-fi.com/teuteuf"
                 target="_blank"

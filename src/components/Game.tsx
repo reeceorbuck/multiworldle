@@ -1,4 +1,5 @@
 import React, {
+  createContext,
   ReactText,
   useCallback,
   useEffect,
@@ -9,6 +10,7 @@ import React, {
 import { toast } from "react-toastify";
 import {
   countries,
+  Country,
   getCountryName,
   sanitizeCountryName,
 } from "../domain/countries";
@@ -21,8 +23,10 @@ import { SettingsData } from "../hooks/useSettings";
 import { useMode } from "../hooks/useMode";
 import { getDayString, useTodays } from "../hooks/useTodays";
 import { Twemoji } from "@teuteuf/react-emoji-render";
+import { useSocket } from "../hooks/useSocket";
+import { GeolibInputCoordinates } from "geolib/es/types";
 
-const MAX_TRY_COUNT = 6;
+const MAX_TRY_COUNT = 10;
 
 interface GameProps {
   settingsData: SettingsData;
@@ -31,6 +35,8 @@ interface GameProps {
 
 export function Game({ settingsData, updateSettings }: GameProps) {
   const { t, i18n } = useTranslation();
+  const socket = useSocket();
+
   const dayString = useMemo(
     () => getDayString(settingsData.shiftDayCount),
     [settingsData.shiftDayCount]
@@ -40,6 +46,60 @@ export function Game({ settingsData, updateSettings }: GameProps) {
 
   const [todays, addGuess, randomAngle, imageScale] = useTodays(dayString);
   const { country, guesses } = todays;
+
+  const formatGuess = useCallback(
+    (currentGuess: string) => {
+      const guessedCountry = countries.find(
+        (country) =>
+          sanitizeCountryName(
+            getCountryName(i18n.resolvedLanguage, country)
+          ) === sanitizeCountryName(currentGuess)
+      );
+
+      if (guessedCountry == null || !country) {
+        return;
+      }
+
+      return {
+        name: currentGuess,
+        distance: geolib.getDistance(guessedCountry, country),
+        direction: geolib.getCompassDirection(
+          guessedCountry,
+          country,
+          (origin, dest) =>
+            Math.round(geolib.getRhumbLineBearing(origin, dest) / 45) * 45
+        ),
+      };
+    },
+    [country, i18n.resolvedLanguage]
+  );
+
+  const onMessage = useCallback(
+    (message) => {
+      const data = JSON.parse(message?.data);
+      console.log("RECEIVED DATA FROM SERVER: ", data);
+
+      if (!country) return;
+
+      const serverGuess = formatGuess(data.guess);
+
+      if (!serverGuess) {
+        console.error("Bad guess on server");
+        return;
+      }
+
+      addGuess(serverGuess);
+    },
+    [addGuess, country, formatGuess]
+  );
+
+  useEffect(() => {
+    socket.addEventListener("message", onMessage);
+
+    return () => {
+      socket.removeEventListener("message", onMessage);
+    };
+  }, [socket, onMessage]);
 
   const [currentGuess, setCurrentGuess] = useState("");
   const [hideImageMode, setHideImageMode] = useMode(
@@ -63,37 +123,26 @@ export function Game({ settingsData, updateSettings }: GameProps) {
         return;
       }
       e.preventDefault();
-      const guessedCountry = countries.find(
-        (country) =>
-          sanitizeCountryName(
-            getCountryName(i18n.resolvedLanguage, country)
-          ) === sanitizeCountryName(currentGuess)
-      );
 
-      if (guessedCountry == null) {
+      const newGuess = formatGuess(currentGuess);
+      if (!newGuess) {
         toast.error(t("unknownCountry"));
         return;
       }
-
-      const newGuess = {
-        name: currentGuess,
-        distance: geolib.getDistance(guessedCountry, country),
-        direction: geolib.getCompassDirection(
-          guessedCountry,
-          country,
-          (origin, dest) =>
-            Math.round(geolib.getRhumbLineBearing(origin, dest) / 45) * 45
-        ),
-      };
-
       addGuess(newGuess);
+      console.log("currentGuess: ", currentGuess);
+      socket.send(
+        JSON.stringify({
+          guess: currentGuess,
+        })
+      );
       setCurrentGuess("");
 
       if (newGuess.distance === 0) {
         toast.success(t("welldone"), { delay: 2000 });
       }
     },
-    [addGuess, country, currentGuess, i18n.resolvedLanguage, t]
+    [addGuess, country, currentGuess, t, socket, formatGuess]
   );
 
   useEffect(() => {
@@ -124,6 +173,7 @@ export function Game({ settingsData, updateSettings }: GameProps) {
     <div className="flex-grow flex flex-col mx-2">
       {hideImageMode && !gameEnded && (
         <button
+          title="hideImageButton"
           className="border-2 uppercase my-2 hover:bg-gray-50 active:bg-gray-100 dark:hover:bg-slate-800 dark:active:bg-slate-700"
           type="button"
           onClick={() => setHideImageMode(false)}
@@ -176,6 +226,7 @@ export function Game({ settingsData, updateSettings }: GameProps) {
       </div>
       {rotationMode && !hideImageMode && !gameEnded && (
         <button
+          title="rotationModeButton"
           className="border-2 uppercase mb-2 hover:bg-gray-50 active:bg-gray-100 dark:hover:bg-slate-800 dark:active:bg-slate-700"
           type="button"
           onClick={() => setRotationMode(false)}
@@ -203,6 +254,7 @@ export function Game({ settingsData, updateSettings }: GameProps) {
               rotationMode={rotationMode}
             />
             <a
+              title="CountrySearchLink"
               className="underline w-full text-center block mt-4"
               href={`https://www.google.com/maps?q=${getCountryName(
                 i18n.resolvedLanguage,
