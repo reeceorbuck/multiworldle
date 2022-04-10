@@ -3,8 +3,7 @@ import React, { createContext, ReactChild } from "react";
 // const ws = new WebSocket("ws://localhost");
 
 const socketProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-const echoSocketUrl =
-  socketProtocol + "//" + window.location.hostname + ":8000" + "/ws/";
+const echoSocketUrl = socketProtocol + "//" + window.location.hostname + "/ws/";
 console.log("attempt websocket: ", echoSocketUrl);
 const ws = new WebSocket(echoSocketUrl);
 console.log("ws: ", ws);
