@@ -103,14 +103,18 @@ export function Game({ settingsData, updateSettings }: GameProps) {
   }, [socket, onMessage]);
 
   const [currentGuess, setCurrentGuess] = useState("");
+
+  const queryParams = new URLSearchParams(window.location.search);
+  const gameid = "_gameid:" + queryParams.get("gameid") || "";
+
   const [hideImageMode, setHideImageMode] = useMode(
     "hideImageMode",
-    dayString,
+    dayString + gameid,
     settingsData.noImageMode
   );
   const [rotationMode, setRotationMode] = useMode(
     "rotationMode",
-    dayString,
+    dayString + gameid,
     settingsData.rotationMode
   );
 
