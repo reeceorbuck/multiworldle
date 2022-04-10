@@ -66,7 +66,16 @@ export function Share({
   return (
     <CopyToClipboard
       text={shareText}
-      onCopy={() => toast(t("copy"))}
+      onCopy={() => {
+        console.log("Copied!");
+        // toast(t("copy"));
+
+        const queryParams = new URLSearchParams(window.location.search);
+        const gameidNumber = Number(queryParams.get("gameid") || "0") + 1;
+        // queryParams.set("gameid", `${gameidNumber}`);
+        window.location.search = `gameid=${gameidNumber}`;
+        // window.location.reload();
+      }}
       options={{
         format: "text/plain",
       }}

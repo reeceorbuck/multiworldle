@@ -7,7 +7,7 @@ const resources = {
     translation: {
       placeholder: "Country, territory...",
       guess: "Guess",
-      share: "Share",
+      share: "New Game",
       showOnGoogleMaps: "👀 on Google Maps",
       welldone: "Well done!",
       unknownCountry: "Unknown country!",
